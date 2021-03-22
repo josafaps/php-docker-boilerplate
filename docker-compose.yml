@@ -1,0 +1,55 @@
+version: "3.7"
+
+services:
+  php:
+    build:
+      context: "./.docker/php"
+      dockerfile: Dockerfile
+    container_name: "apache-srv"
+    restart: always
+    volumes:
+      - .docker/apache/ssl/server.pem:/etc/apache2/ssl/certs/server.pem
+      - .docker/apache/ssl/server-key.pem:/etc/apache2/ssl/private/server-key.pem
+      - .docker/apache/000-default.conf:/etc/apache2/sites-enabled/000-default.conf
+      - ./src/:/var/www/html/
+      - ./log/:/dev/log/
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - default
+
+  mysql:
+    image: mysql:5.7
+    container_name: "mysql-srv"
+    volumes:
+      - .docker/db:/var/lib/mysql
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+      MYSQL_ROOT_PASSWORD: rootpassword
+    restart: always
+    networks:
+      - default
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: "phpmyadmin-srv"
+    ports:
+      - 8080:80
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=mysql
+      - PMA_USER=root
+      - PMA_PASSWORD=root
+    links:
+      - mysql
+    restart: always
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge
